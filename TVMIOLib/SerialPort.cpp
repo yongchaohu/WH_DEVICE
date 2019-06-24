@@ -1,12 +1,13 @@
 /*//////////////////////////////////////////////////////////////////////////
 /// COPYRIGHT NOTICE
-/// 
-/// @file    SerialPort.cpp  
+///
+/// @file    SerialPort.cpp
 /// @brief   Windows下串口通信类的实现文件
 ///
 /// 修订说明：
 //////////////////////////////////////////////////////////////////////////
 */
+#include "stdafx.h"
 #include <errno.h>
 #include "SerialPort.h"  
 #include <process.h>  
@@ -17,8 +18,7 @@
 #include <winbase.h>
 
 
-
-HANDLE  m_hComm;  
+HANDLE  m_hComm;
 
 bool openPort(UINT portNo)
 {
@@ -72,11 +72,11 @@ bool sp_open(UINT portNo /*= 1*/, UINT baud /*= CBR_9600*/, char parity /*= 'N'*
 
 	/** 设置串口的超时时间,均设为0,表示不使用超时限制 */
 	COMMTIMEOUTS  CommTimeouts;
-	CommTimeouts.ReadIntervalTimeout = 0;
-	CommTimeouts.ReadTotalTimeoutMultiplier = 0;
-	CommTimeouts.ReadTotalTimeoutConstant = 0;
-	CommTimeouts.WriteTotalTimeoutMultiplier = 0;
-	CommTimeouts.WriteTotalTimeoutConstant = 0;
+	CommTimeouts.ReadIntervalTimeout = 0;            // 读时间系数
+	CommTimeouts.ReadTotalTimeoutMultiplier = 2;     // 读时间常量
+	CommTimeouts.ReadTotalTimeoutConstant = 15;      // 读间隔超时 
+	CommTimeouts.WriteTotalTimeoutMultiplier = 0;    // 写时间常量
+	CommTimeouts.WriteTotalTimeoutConstant = 3;      // 写时间系数
 	if (bIsSuccess)
 	{
 		bIsSuccess = SetCommTimeouts(m_hComm, &CommTimeouts);
@@ -87,7 +87,7 @@ bool sp_open(UINT portNo /*= 1*/, UINT baud /*= CBR_9600*/, char parity /*= 'N'*
 	{
 		// 将ANSI字符串转换为UNICODE字符串  
 		DWORD dwNum = MultiByteToWideChar(CP_ACP, 0, szDCBparam, -1, NULL, 0);
-		wchar_t *pwText = new wchar_t[dwNum];
+		wchar_t* pwText = new wchar_t[dwNum];
 		if (!MultiByteToWideChar(CP_ACP, 0, szDCBparam, -1, pwText, dwNum))
 		{
 			bIsSuccess = TRUE;
@@ -114,7 +114,7 @@ bool sp_open(UINT portNo /*= 1*/, UINT baud /*= CBR_9600*/, char parity /*= 'N'*
 	return bIsSuccess == TRUE;
 }
 
-bool InitPort(UINT portNo, const LPDCB& plDCB)
+bool InitPort(UINT portNo, const LPDCB & plDCB)
 {
 	/** 打开指定串口,该函数内部已经有临界区保护,上面请不要加保护 */
 	if (!openPort(portNo))
@@ -162,7 +162,7 @@ UINT sp_clear()
 }
 
 
-bool sp_read(char *p, int len)
+bool sp_read(char* p, int len)
 {
 	BOOL  bResult = TRUE;
 	DWORD BytesRead = 0;
@@ -173,7 +173,7 @@ bool sp_read(char *p, int len)
 
 
 	/** 从缓冲区读取数据 */
-	bResult = ReadFile(m_hComm, p , len, &BytesRead, NULL);
+	bResult = ReadFile(m_hComm, p, len, &BytesRead, NULL);
 	if ((!bResult))
 	{
 		/** 获取错误码,可以根据该错误码查出错误原因 */

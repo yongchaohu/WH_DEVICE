@@ -32,6 +32,7 @@ CBNCCommands::CBNCCommands()
 
 	m_IsAccepting = false;
 	m_psCashInfo = tBncCashInfo();
+	m_psCashInfo.psBncCashInfo = new tBncCashItem[6];
 }
 
 CBNCCommands::~CBNCCommands()
@@ -47,6 +48,11 @@ CBNCCommands::~CBNCCommands()
 	if (m_lpCount)
 	{
 		WFSFreeResult(m_lpCount);
+	}
+	if (m_psCashInfo.psBncCashInfo)
+	{
+		delete[] m_psCashInfo.psBncCashInfo;
+		m_psCashInfo.psBncCashInfo = NULL;
 	}
 }
 
@@ -765,7 +771,7 @@ long CBNCCommands::ReplaceCashUnit()
 	LogApi.WriteLog(_T(""), CString(__FUNCTION__), __LINE__, sLogString);
 	HRESULT result;
 
-	
+
 	LPWFSCIMSTARTEX	lpStartEx = NULL;
 	WFMAllocateBuffer(sizeof(WFSCIMSTARTEX),
 		WFS_MEM_ZEROINIT, (LPVOID*)& lpStartEx);
@@ -1345,10 +1351,10 @@ bool CBNCCommands::BNC_GetAcceptFlag()
 
 int CBNCCommands::GetCashInfoResponse(tBncCashInfo * p_psCashInfo)
 {
-	if (p_psCashInfo == NULL || p_psCashInfo->psBncCashInfo == NULL)
+	if (p_psCashInfo == NULL /*|| p_psCashInfo->psBncCashInfo == NULL*/)
 		return BNC_RETURN_FAULT;
-
-	p_psCashInfo->iNumOfItems = m_lpCashInNoteList.usNumOfNoteNumbers;
+	memset(m_psCashInfo.psBncCashInfo, 0x00, sizeof(tBncCashItem) * 6);
+	m_psCashInfo.iNumOfItems = m_lpCashInNoteList.usNumOfNoteNumbers;
 
 	for (int n = 0; n < m_lpCashInNoteList.usNumOfNoteNumbers; n++)
 	{
@@ -1356,33 +1362,34 @@ int CBNCCommands::GetCashInfoResponse(tBncCashInfo * p_psCashInfo)
 		switch (lAmount)
 		{
 		case BNC_FACE_CNY1:
-			p_psCashInfo->psBncCashInfo[0].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
-			p_psCashInfo->psBncCashInfo[0].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY1;
+			m_psCashInfo.psBncCashInfo[0].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
+			m_psCashInfo.psBncCashInfo[0].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY1;
 			break;
 		case BNC_FACE_CNY5:
-			p_psCashInfo->psBncCashInfo[1].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
-			p_psCashInfo->psBncCashInfo[1].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY5;
+			m_psCashInfo.psBncCashInfo[1].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
+			m_psCashInfo.psBncCashInfo[1].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY5;
 			break;
 		case BNC_FACE_CNY10:
-			p_psCashInfo->psBncCashInfo[2].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
-			p_psCashInfo->psBncCashInfo[2].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY10;
+			m_psCashInfo.psBncCashInfo[2].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
+			m_psCashInfo.psBncCashInfo[2].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY10;
 			break;
 		case BNC_FACE_CNY20:
-			p_psCashInfo->psBncCashInfo[3].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
-			p_psCashInfo->psBncCashInfo[3].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY20;
+			m_psCashInfo.psBncCashInfo[3].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
+			m_psCashInfo.psBncCashInfo[3].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY20;
 			break;
 		case BNC_FACE_CNY50:
-			p_psCashInfo->psBncCashInfo[4].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
-			p_psCashInfo->psBncCashInfo[4].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY50;
+			m_psCashInfo.psBncCashInfo[4].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
+			m_psCashInfo.psBncCashInfo[4].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY50;
 			break;
 		case BNC_FACE_CNY100:
-			p_psCashInfo->psBncCashInfo[5].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
-			p_psCashInfo->psBncCashInfo[5].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY100;
+			m_psCashInfo.psBncCashInfo[5].iCount += m_lpCashInNoteList.lppNoteNumber[n]->ulCount;
+			m_psCashInfo.psBncCashInfo[5].iValue += m_lpCashInNoteList.lppNoteNumber[n]->ulCount * BNC_FACE_CNY100;
 			break;
 		default:
 			break;
 		}
 	}
+	memcpy(p_psCashInfo, &m_psCashInfo, sizeof(tBncCashInfo));
 	return BNC_RETURN_NO_ERROR;
 }
 
@@ -1395,14 +1402,14 @@ int CBNCCommands::GetEnCashInfoResponse(tBncEnCashInfo * cashInfo)
 	}
 	return BNC_RETURN_NO_ERROR;
 }
-bool CBNCCommands::GetIsExecute(){
+bool CBNCCommands::GetIsExecute() {
 	WFSCIMSTATUS status;
 	GetStatus(status);
-	WFSCIMINPOS  apos;  
+	WFSCIMINPOS  apos;
 	WFSCIMINPOS  bpos;
-	memcpy(&apos,*(status.lppPositions), sizeof(WFSCIMINPOS));
-	memcpy(&bpos,*(++status.lppPositions), sizeof(WFSCIMINPOS));
-	return apos.fwPositionStatus||bpos.fwPositionStatus||apos.fwTransportStatus||bpos.fwTransportStatus;  //0为关闭，1为开启
+	memcpy(&apos, *(status.lppPositions), sizeof(WFSCIMINPOS));
+	memcpy(&bpos, *(++status.lppPositions), sizeof(WFSCIMINPOS));
+	return apos.fwPositionStatus || bpos.fwPositionStatus || apos.fwTransportStatus || bpos.fwTransportStatus;  //0为关闭，1为开启
 }
 
 
@@ -1463,7 +1470,7 @@ CBNCCommands bncCommands;
 // 返回值说明
 // 1	Int	0	成功
 // 2	Int	1	串口打开出错
-int  BNC_open(unsigned int uiCommPort, unsigned int uiBaudRate,CString path, CString fileName)
+int  BNC_open(unsigned int uiCommPort, unsigned int uiBaudRate, CString path, CString fileName)
 {
 	//如果传入的值为空值
 	if (path == _T("") || fileName == _T(""))
@@ -1491,7 +1498,7 @@ int  BNC_open(unsigned int uiCommPort, unsigned int uiBaudRate,CString path, CSt
 // 返回值说明见下表。
 // 1	Int	0	成功
 // 2	Int	1	传入参数为空
-int BNC_Init(tBncInitNumInfo *pNumInfo, tBncDevReturn * pDevStatus)
+int BNC_Init(tBncInitNumInfo * pNumInfo, tBncDevReturn * pDevStatus)
 {
 	if (pNumInfo == NULL || pDevStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -1547,13 +1554,13 @@ int BNC_GetVersion(char* pVersion, tBncDevReturn * p_psStatus)
 // 	返回值说明
 // 	1	Int	0	成功
 // 	2	Int	1	传入参数为空
-int  BNC_SetPrevalue(tBncSetInhibitList *p_psBuyTicketSetInhibitList, tBncSetInhibitList *p_psRechargeSetInhibitList, tBncDevReturn * p_psStatus)
+int  BNC_SetPrevalue(tBncSetInhibitList * p_psBuyTicketSetInhibitList, tBncSetInhibitList * p_psRechargeSetInhibitList, tBncDevReturn * p_psStatus)
 {
 	if ((p_psBuyTicketSetInhibitList == NULL && p_psRechargeSetInhibitList == NULL) || p_psStatus == NULL)
 		return BNC_RETURN_FAULT;
 
 	long errCode = 0;
-	tBncSetInhibitList* m_InhibitList;
+	tBncSetInhibitList * m_InhibitList;
 	if (p_psBuyTicketSetInhibitList->iNumOfItems > 0 && p_psBuyTicketSetInhibitList->psBncCashInfo != NULL)
 		m_InhibitList = p_psBuyTicketSetInhibitList;
 	else if (p_psRechargeSetInhibitList->iNumOfItems > 0 && p_psRechargeSetInhibitList->psBncCashInfo != NULL)
@@ -1647,7 +1654,7 @@ int  BNC_SetPrevalue(tBncSetInhibitList *p_psBuyTicketSetInhibitList, tBncSetInh
 // 返回值说明
 // 	1	Int	0	成功
 // 	2	Int	1	传入参数为空
-int BNC_Reset(int iMode, int iRetryTimes, tBncInitNumInfo *pNumInfo, tBncDevReturn * p_psStatus)
+int BNC_Reset(int iMode, int iRetryTimes, tBncInitNumInfo * pNumInfo, tBncDevReturn * p_psStatus)
 {
 	if (pNumInfo == NULL || p_psStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -1714,7 +1721,7 @@ int BNC_GetStatus(tBncDevReturn * p_psStatus)
 }
 
 // 获取模块详细状态
-int BNC_GetSysDevStatus(tBncSysDevStatus* p_psSysStatus)
+int BNC_GetSysDevStatus(tBncSysDevStatus * p_psSysStatus)
 {
 	if (p_psSysStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -1747,7 +1754,7 @@ int BNC_GetSysDevStatus(tBncSysDevStatus* p_psSysStatus)
 // 	2	tBncDevReturn *	pDevStatus	Out	返回状态信息
 // 	返回值说明见下表。
 // 	1	int	0：执行成功；1，执行失败。
-int BNC_GetAuditData(tBncAuditCashNum *pBncAuditCashNum, tBncDevReturn *pDevStatus)
+int BNC_GetAuditData(tBncAuditCashNum * pBncAuditCashNum, tBncDevReturn * pDevStatus)
 {
 	//该函数不用
 	if (pBncAuditCashNum == NULL || pDevStatus == NULL)
@@ -1766,7 +1773,7 @@ int BNC_GetAuditData(tBncAuditCashNum *pBncAuditCashNum, tBncDevReturn *pDevStat
 // 	2	tBncDevReturn *	pDevStatus	Out	返回状态信息
 // 	返回值见表80。
 // 	1	int	0：执行成功；1，执行失败。
-int BNC_GetBillBoxInfo(tBncBillBoxInfo *pBillBoxInfo, tBncDevReturn *pDevStatus)
+int BNC_GetBillBoxInfo(tBncBillBoxInfo * pBillBoxInfo, tBncDevReturn * pDevStatus)
 {
 	//该函数不用
 	if (pBillBoxInfo == NULL || pDevStatus == NULL)
@@ -1786,7 +1793,7 @@ int BNC_GetBillBoxInfo(tBncBillBoxInfo *pBillBoxInfo, tBncDevReturn *pDevStatus)
 // 	3	tBncDevReturn *	pDevStatus	Out	返回状态信息
 // 	返回值见下表。
 // 	1	int	0：执行成功；1，执行失败。
-int BNC_SetBillBoxInfo(UINT uiSlotID, tBncBillBoxInfo *pBillBoxInfo, tBncDevReturn *pDevStatus)
+int BNC_SetBillBoxInfo(UINT uiSlotID, tBncBillBoxInfo * pBillBoxInfo, tBncDevReturn * pDevStatus)
 {
 	//该函数不用
 	if (pBillBoxInfo == NULL || pDevStatus == NULL)
@@ -1812,7 +1819,7 @@ int BNC_Start(tBncDevReturn * p_psStatus)
 		return BNC_RETURN_FAULT;
 
 	long errCode = 0;
-	if(!bncCommands.GetIsExecute()){
+	if (!bncCommands.GetIsExecute()) {
 		if (!bncCommands.BNC_GetAcceptFlag())
 		{
 			bncCommands.BNC_SetAcceptFlag(TRUE);
@@ -1827,20 +1834,21 @@ int BNC_Start(tBncDevReturn * p_psStatus)
 			}
 		}
 
-	int dwTimeOut = 0;
-	//接收纸币
-	memset(&bncCommands.m_lpCashInNoteList, 0, sizeof(WFSCIMNOTENUMBERLIST));
-	errCode = bncCommands.CashIn(bncCommands.m_lpCashInNoteList, dwTimeOut);
-	if (errCode != WFS_SUCCESS)
-	{
-		p_psStatus->iType = BNC_ITYPE_FAULT;
+		int dwTimeOut = 0;
+		//接收纸币
+		memset(&bncCommands.m_lpCashInNoteList, 0, sizeof(WFSCIMNOTENUMBERLIST));
+		errCode = bncCommands.CashIn(bncCommands.m_lpCashInNoteList, dwTimeOut);
+		if (errCode != WFS_SUCCESS)
+		{
+			p_psStatus->iType = BNC_ITYPE_FAULT;
+			p_psStatus->iErrorCode = errCode;
+			return BNC_RETURN_FAULT;
+		}
+		p_psStatus->iType = BNC_ITYPE_NO_ERROR;
 		p_psStatus->iErrorCode = errCode;
-		return BNC_RETURN_FAULT;
+		return BNC_RETURN_NO_ERROR;
 	}
-	p_psStatus->iType = BNC_ITYPE_NO_ERROR;
-	p_psStatus->iErrorCode = errCode;
-	return BNC_RETURN_NO_ERROR;
-	}else{
+	else {
 		p_psStatus->iType = BNC_ITYPE_FAULT;
 		p_psStatus->iErrorCode = errCode;
 		return BNC_RETURN_FAULT;
@@ -1854,83 +1862,84 @@ int BNC_Start(tBncDevReturn * p_psStatus)
 // 	返回值说明见下表
 // 	1	Int	0	成功
 // 	2	Int	1	传入参数为空
-int BNC_Stop(tBncEnCashInfo *p_psCashInfo, tBncDevReturn * p_psStatus)
+int BNC_Stop(tBncEnCashInfo * p_psCashInfo, tBncDevReturn * p_psStatus)
 {
 	if (p_psCashInfo == NULL || p_psStatus == NULL)
 		return BNC_RETURN_FAULT;
 	long errCode = 0;
 	WFSCIMCASHINFO lpCUInfo;
-	if(!bncCommands.GetIsExecute()){
-	errCode = bncCommands.CashInEnd(lpCUInfo);
-	bncCommands.BNC_SetAcceptFlag(FALSE);
-	if (errCode != WFS_SUCCESS)
-	{
-		p_psStatus->iType = BNC_ITYPE_FAULT;
-		p_psStatus->iErrorCode = errCode;
-		return BNC_RETURN_FAULT;
-	}
-	else
-	{
-		for (int i = 0; i < lpCUInfo.usCount; i++)
+	if (!bncCommands.GetIsExecute()) {
+		errCode = bncCommands.CashInEnd(lpCUInfo);
+		bncCommands.BNC_SetAcceptFlag(FALSE);
+		if (errCode != WFS_SUCCESS)
 		{
-			//钱箱物理名称
-			CString szPhyName(lpCUInfo.lppCashIn[i]->lppPhysical[0]->lpPhysicalPositionName);
-			if (lpCUInfo.lppCashIn[i]->ulCashInCount > 0)
+			p_psStatus->iType = BNC_ITYPE_FAULT;
+			p_psStatus->iErrorCode = errCode;
+			return BNC_RETURN_FAULT;
+		}
+		else
+		{
+			for (int i = 0; i < lpCUInfo.usCount; i++)
 			{
-				if (szPhyName == _T("Stacker1"))
+				//钱箱物理名称
+				CString szPhyName(lpCUInfo.lppCashIn[i]->lppPhysical[0]->lpPhysicalPositionName);
+				if (lpCUInfo.lppCashIn[i]->ulCashInCount > 0)
 				{
-					p_psCashInfo->wRecyclerAIntoCount = lpCUInfo.lppCashIn[i]->ulCashInCount;
-				}
-				if (szPhyName == _T("Stacker2"))
-				{
-					p_psCashInfo->wRecyclerBIntoCount = lpCUInfo.lppCashIn[i]->ulCashInCount;
-				}
-				if (szPhyName == _T("Stacker3"))
-				{
-					p_psCashInfo->wRecyclerCIntoCount = lpCUInfo.lppCashIn[i]->ulCashInCount;
-				}
-				if (szPhyName == _T("Stacker4"))
-				{
-					p_psCashInfo->wRecyclerDIntoCount = lpCUInfo.lppCashIn[i]->ulCashInCount;
-				}
-				if (szPhyName == _T("CashBox"))
-				{
-					LPWFSCIMNOTENUMBERLIST lpNoteNumberList = lpCUInfo.lppCashIn[i]->lpNoteNumberList;
-					for (int j = 0; j < lpNoteNumberList->usNumOfNoteNumbers; j++)
+					if (szPhyName == _T("Stacker1"))
 					{
-						long lAmount = NoteID2Amount(lpNoteNumberList->lppNoteNumber[j]->usNoteID);
-						switch (lAmount)
+						p_psCashInfo->wRecyclerAIntoCount = lpCUInfo.lppCashIn[i]->ulCashInCount;
+					}
+					if (szPhyName == _T("Stacker2"))
+					{
+						p_psCashInfo->wRecyclerBIntoCount = lpCUInfo.lppCashIn[i]->ulCashInCount;
+					}
+					if (szPhyName == _T("Stacker3"))
+					{
+						p_psCashInfo->wRecyclerCIntoCount = lpCUInfo.lppCashIn[i]->ulCashInCount;
+					}
+					if (szPhyName == _T("Stacker4"))
+					{
+						p_psCashInfo->wRecyclerDIntoCount = lpCUInfo.lppCashIn[i]->ulCashInCount;
+					}
+					if (szPhyName == _T("CashBox"))
+					{
+						LPWFSCIMNOTENUMBERLIST lpNoteNumberList = lpCUInfo.lppCashIn[i]->lpNoteNumberList;
+						for (int j = 0; j < lpNoteNumberList->usNumOfNoteNumbers; j++)
 						{
-						case BNC_FACE_CNY1:
-							p_psCashInfo->wCashBox_CNY1_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
-							break;
-						case BNC_FACE_CNY5:
-							p_psCashInfo->wCashBox_CNY5_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
-							break;
-						case BNC_FACE_CNY10:
-							p_psCashInfo->wCashBox_CNY10_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
-							break;
-						case BNC_FACE_CNY20:
-							p_psCashInfo->wCashBox_CNY20_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
-							break;
-						case BNC_FACE_CNY50:
-							p_psCashInfo->wCashBox_CNY50_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
-							break;
-						case BNC_FACE_CNY100:
-							p_psCashInfo->wCashBox_CNY100_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
-							break;
-						default:
-							break;
+							long lAmount = NoteID2Amount(lpNoteNumberList->lppNoteNumber[j]->usNoteID);
+							switch (lAmount)
+							{
+							case BNC_FACE_CNY1:
+								p_psCashInfo->wCashBox_CNY1_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
+								break;
+							case BNC_FACE_CNY5:
+								p_psCashInfo->wCashBox_CNY5_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
+								break;
+							case BNC_FACE_CNY10:
+								p_psCashInfo->wCashBox_CNY10_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
+								break;
+							case BNC_FACE_CNY20:
+								p_psCashInfo->wCashBox_CNY20_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
+								break;
+							case BNC_FACE_CNY50:
+								p_psCashInfo->wCashBox_CNY50_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
+								break;
+							case BNC_FACE_CNY100:
+								p_psCashInfo->wCashBox_CNY100_IntoCount += lpNoteNumberList->lppNoteNumber[j]->ulCount;
+								break;
+							default:
+								break;
+							}
 						}
 					}
 				}
 			}
 		}
+		p_psStatus->iType = BNC_ITYPE_NO_ERROR;
+		p_psStatus->iErrorCode = errCode;
+		return BNC_RETURN_NO_ERROR;
 	}
-	p_psStatus->iType = BNC_ITYPE_NO_ERROR;
-	p_psStatus->iErrorCode = errCode;
-	return BNC_RETURN_NO_ERROR;
-	}else{
+	else {
 		p_psStatus->iType = BNC_ITYPE_FAULT;
 		p_psStatus->iErrorCode = errCode;
 		return BNC_RETURN_FAULT;
@@ -1966,7 +1975,7 @@ int BNC_Stop(tBncEnCashInfo *p_psCashInfo, tBncDevReturn * p_psStatus)
 // 	f)	对于MEI的纸币模块，p_byOperation可以获取0，1，3，5；
 // 	g)	对于G&D的纸币模块，p_byOperation可以获取0，1，5，6，7，9，10；
 // 	h)	对于钱箱已满，钱箱已取走，机芯故障，未知错误等其他错误，可以通过BNA_ GetStatu的硬件返回信息来判断获取。
-int  BNC_GetCashInfo(tBncCashInfo *p_psCashInfo, BYTE& p_byOperation, tBncDevReturn *p_psStatus)
+int  BNC_GetCashInfo(tBncCashInfo * p_psCashInfo, BYTE & p_byOperation, tBncDevReturn * p_psStatus)
 {
 	if (p_psCashInfo == NULL || p_psStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -1998,7 +2007,7 @@ int  BNC_GetCashInfo(tBncCashInfo *p_psCashInfo, BYTE& p_byOperation, tBncDevRet
 // 	返回值说明见下表
 // 	1	Int	0	成功
 // 	2	Int	1	传入参数为空
-int  BNC_Encash(tBncDevReturn *p_psStatus)
+int  BNC_Encash(tBncDevReturn * p_psStatus)
 {
 	if (p_psStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -2006,7 +2015,7 @@ int  BNC_Encash(tBncDevReturn *p_psStatus)
 	long errCode = 0;
 	WFSCIMCASHINFO lpCUInfo;
 	memset(&bncCommands.m_cashIntoInfo, 0x00, sizeof(bncCommands.m_cashIntoInfo));
-	
+
 	errCode = bncCommands.CashInEnd(lpCUInfo);
 	if (errCode == WFS_SUCCESS) {
 		for (int i = 0; i < lpCUInfo.usCount; i++)
@@ -2094,25 +2103,26 @@ int  BNC_Encash(tBncDevReturn *p_psStatus)
 // 	返回值说明见下表
 // 	1	Int	0	成功
 // 	2	Int	1	传入参数为空
-int  BNC_Refund(tBncDevReturn *p_psStatus)
+int  BNC_Refund(tBncDevReturn * p_psStatus)
 {
 	if (p_psStatus == NULL)
 		return BNC_RETURN_FAULT;
 	long errCode = 0;
-	if(!bncCommands.GetIsExecute()){
-	errCode = bncCommands.CashInRollback();
-	bncCommands.BNC_SetAcceptFlag(FALSE);
-	if (errCode != WFS_SUCCESS)
-	{
-		p_psStatus->iType = BNC_ITYPE_FAULT;
-		p_psStatus->iErrorCode = errCode;
-		return BNC_RETURN_FAULT;
-	}
+	if (!bncCommands.GetIsExecute()) {
+		errCode = bncCommands.CashInRollback();
+		bncCommands.BNC_SetAcceptFlag(FALSE);
+		if (errCode != WFS_SUCCESS)
+		{
+			p_psStatus->iType = BNC_ITYPE_FAULT;
+			p_psStatus->iErrorCode = errCode;
+			return BNC_RETURN_FAULT;
+		}
 
-	p_psStatus->iType = BNC_ITYPE_NO_ERROR;
-	p_psStatus->iErrorCode = errCode;
-	return BNC_RETURN_NO_ERROR;
-	}else{
+		p_psStatus->iType = BNC_ITYPE_NO_ERROR;
+		p_psStatus->iErrorCode = errCode;
+		return BNC_RETURN_NO_ERROR;
+	}
+	else {
 		p_psStatus->iType = BNC_ITYPE_FAULT;
 		p_psStatus->iErrorCode = errCode;
 		return BNC_RETURN_FAULT;
@@ -2129,7 +2139,7 @@ int  BNC_Refund(tBncDevReturn *p_psStatus)
 // 	返回值说明见下表
 // 	1	Int	0	成功
 // 	2	Int	1	传入参数为空
-int BNC_GetBoxID(char * p_BoxID, tBncDevReturn * p_psStatus)
+int BNC_GetBoxID(char* p_BoxID, tBncDevReturn * p_psStatus)
 {
 	if (p_BoxID == NULL || p_psStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -2146,7 +2156,7 @@ int BNC_GetBoxID(char * p_BoxID, tBncDevReturn * p_psStatus)
 // 	2	tBncDevReturn *	pDevStatus	Out	返回状态信息
 // 	返回值说明见下表。
 // 	1	int	0：执行成功；1，执行失败。
-int BNC_ChangeBill(tBncChangeNum *pChangeNum, tBncDevReturn *pDevStatus)
+int BNC_ChangeBill(tBncChangeNum * pChangeNum, tBncDevReturn * pDevStatus)
 {
 	if (pChangeNum == NULL || pDevStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -2201,7 +2211,7 @@ int BNC_ChangeBill(tBncChangeNum *pChangeNum, tBncDevReturn *pDevStatus)
 // 	返回值说明见下表。
 // 	1	Int	0	成功
 // 	2	Int	1	传入参数为空
-int  BNC_Cancel(tBncDevReturn *p_psStatus)
+int  BNC_Cancel(tBncDevReturn * p_psStatus)
 {
 	if (p_psStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -2229,7 +2239,7 @@ int  BNC_Cancel(tBncDevReturn *p_psStatus)
 // 	3	tBncDevReturn *	pDevStatus	Out	返回状态信息
 // 	返回值见下表。
 // 	1	int	0：执行成功；1：执行失败。
-int BNC_StartReplaceBox(UINT uiBoxType, UINT uiBoxNo, tBncDevReturn *pDevStatus)
+int BNC_StartReplaceBox(UINT uiBoxType, UINT uiBoxNo, tBncDevReturn * pDevStatus)
 {
 	if (pDevStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -2256,7 +2266,7 @@ int BNC_StartReplaceBox(UINT uiBoxType, UINT uiBoxNo, tBncDevReturn *pDevStatus)
 // 	返回值说明见下表。
 // 	1	Int	0	成功
 // 	2	Int	1	传入参数为空
-int BNC_StopReplaceBox(UINT uiBoxType, UINT uiBoxNo, tBncDevReturn *pDevStatus)
+int BNC_StopReplaceBox(UINT uiBoxType, UINT uiBoxNo, tBncDevReturn * pDevStatus)
 {
 	if (pDevStatus == NULL)
 		return BNC_RETURN_FAULT;
@@ -2294,7 +2304,7 @@ int BNC_WriteRFIDInfo(UINT uiSLotID, tBncRfidInfo * pRFIDInfo, tBncDevReturn * p
 // 	3	tBncDevReturn *	pDevStatus	Out	返回状态信息
 // 	返回值说明见下表。
 // 	1	int	0：执行成功；1，执行失败。
-int BNC_ReadRFIDInfo(UINT uiSLotID, tBncRfidInfo* pRFIDInfo, tBncDevReturn * pDevStatus)
+int BNC_ReadRFIDInfo(UINT uiSLotID, tBncRfidInfo * pRFIDInfo, tBncDevReturn * pDevStatus)
 {
 	//G60无RFID，直接返回错误
 	if (pRFIDInfo == NULL || pDevStatus == NULL)
@@ -2307,7 +2317,7 @@ int BNC_ReadRFIDInfo(UINT uiSLotID, tBncRfidInfo* pRFIDInfo, tBncDevReturn * pDe
 
 //   清空钱箱
 //	OUT tBncChangeNum* pBoxInfo
-int BNC_Empty(tBncChangeNum* pBoxInfo)
+int BNC_Empty(tBncChangeNum * pBoxInfo)
 {
 	if (pBoxInfo == NULL)
 		return BNC_RETURN_FAULT;
